@@ -1,3 +1,71 @@
+## Example
+
+**Module call**
+```hcl
+module "datadog_monitors" {
+  source = "git::ssh://git@github.com:rdvansloten/datadog-monitor.git"
+
+  monitors         = var.monitors
+  environment      = "production"
+  pagerduty_handle = "@pagerduty"
+}
+```
+
+**Variables**
+```hcl
+variable "monitors" {
+  type        = list(any)
+  description = "Map of monitors to create."
+}
+
+variable "environment" {
+  type        = string
+  description = "The environment to deploy to."
+}
+
+variable "resource_group_name" {
+  type        = string
+  description = "Name of the Resource Group to use for the Key Vault."
+}
+
+variable "key_vault_name" {
+  type        = string
+  description = "Name of the Key Vault to use for the Datadog API and App keys."
+}
+
+locals {
+  short_environment = lower(substr(var.environment, 0, 1))
+}
+```
+
+**Terraform variable values**
+```hcl
+environment         = "production"
+key_vault_name      = "mykv"
+resource_group_name = "myrg"
+
+default_monitors = [
+  {
+    service_name        = "Datadog"
+    service_metric_name = "Agent Unavailable"
+    application_name    = "Host {{host.name}}"
+    type                = "query alert"
+    query               = "avg(last_10m):avg:datadog.agent.running{env:nonprod} by {env,cluster_name,host} < 0.99"
+    contacts            = ["@rudy.vansloten@nordcloud.com"]
+    tags                = ["service:kubernetes"]
+    notify_pagerduty    = false
+
+    monitor_thresholds = {
+      critical          = 0.99
+      warning           = null
+      critical_recovery = 1
+      warning_recovery  = null
+    }
+  }
+]
+```
+
+[//]: # (BEGIN_TF_DOCS)
 ## Requirements
 
 | Name | Version |
@@ -35,3 +103,5 @@ No modules.
 | Name | Description |
 |------|-------------|
 | <a name="output_id"></a> [id](#output\_id) | List of Datadog Monitor IDs. |
+
+[//]: # (END_TF_DOCS)
